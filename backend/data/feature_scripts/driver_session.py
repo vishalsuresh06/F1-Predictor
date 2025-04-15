@@ -18,7 +18,7 @@ def get_driver_stats(year, race, event):
         if driver_laps.empty:
             continue
         
-        accurate_laps = laps(
+        accurate_laps = (
                 session.laps.pick_drivers(f'{driver}')
                 .pick_quicklaps()
                 .query("IsAccurate and not Deleted")
@@ -63,24 +63,25 @@ def get_driver_stats(year, race, event):
             except IndexError:
                 pass
         
-                driver_stats.append({
-            "driver": driver,
-            "avg_lap_time": avg_lap_time,
-            "best_lap_time": best_lap_time,
-            "lap_time_std": lap_time_std,
-            "total_laps": total_laps,
-            "delta_to_session_best": delta_to_best.mean(),
-            "sector1_avg": s1_avg,
-            "sector2_avg": s2_avg,
-            "sector3_avg": s3_avg,
-            "sector1_min": s1_min,
-            "sector2_min": s2_min,
-            "sector3_min": s3_min,
-            "long_run_avg_pace": long_run_avg_pace,
-            "long_run_degradation_rate": degradation_rate,
-            "qualifying_clean_laps": len(qualifying_clean_laps),
-            "qualifying_position": qualifying_position
-        })
+            driver_stats.append({
+                "driver": driver,
+                "session": event,
+                "avg_lap_time": avg_lap_time,
+                "best_lap_time": best_lap_time,
+                "lap_time_std": lap_time_std,
+                "total_laps": total_laps,
+                "delta_to_session_best": delta_to_best.mean(),
+                "sector1_avg": s1_avg,
+                "sector2_avg": s2_avg,
+                "sector3_avg": s3_avg,
+                "sector1_min": s1_min,
+                "sector2_min": s2_min,
+                "sector3_min": s3_min,
+                "long_run_avg_pace": long_run_avg_pace,
+                "long_run_degradation_rate": degradation_rate,
+                "qualifying_clean_laps": len(qualifying_clean_laps),
+                "qualifying_position": qualifying_position
+            })
 
     return pd.DataFrame(driver_stats)
 
