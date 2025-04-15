@@ -14,4 +14,4 @@ def get_weather_and_track_data(year, race, event):
         "weather_variability": weather[['AirTemp', 'TrackTemp', 'Humidity']].std()
     }
 
-    return pd.DataFrame(featureRow)
+    return pd.DataFrame([featureRow])

@@ -2,61 +2,92 @@ import os
 import fastf1
 import pandas as pd
 from tqdm import tqdm
+
 from feature_scripts.weather_and_track import get_weather_and_track_data
 from feature_scripts.driver_session import get_driver_stats
 from feature_scripts.driver_profiles import get_driver_profiles
 
-# Enable FastF1 cache
-fastf1.Cache.enable_cache('backend/data/cache')
+
+# ------------------------------ #
+#       CONFIGURATION SETUP     #
+# ------------------------------ #
+DATA_CACHE_PATH = 'backend/data/cache'
+RAW_DATA_PATH = 'backend/data/raw_data'
+YEARS = [2022, 2023, 2024]
+SESSIONS = ['R', 'FP1', 'FP2', 'FP3', 'Q']
+
+# Enable FastF1 cache and logging
+fastf1.Cache.enable_cache(DATA_CACHE_PATH)
 fastf1.logger.set_log_level('ERROR')
 
-# Define years and session types
-years = [2022, 2023, 2024]
-events = ['R', 'FP1', 'FP2', 'FP3', 'Q']
-base_path = 'backend/data/raw_data'  # Output folder for raw data
 
-def sanitize_filename(name):
-    """Remove illegal characters from file paths."""
+# ------------------------------ #
+#           UTILITIES           #
+# ------------------------------ #
+def sanitize_filename(name: str) -> str:
+    """Removes illegal characters from file paths."""
     return name.replace('/', '-').replace('\\', '-').replace(':', '-').replace('?', '').strip()
 
-# Load static driver profile data once
-profiles: pd.DataFrame = get_driver_profiles()
-# Save driver profiles (once per event)
-profiles_file = os.path.join(base_path, 'driver_profiles.csv')
-profiles.to_csv(profiles_file, index=False)
-tqdm.write(f"✅ Saved: {profiles_file}")
+def save_dataframe(df: pd.DataFrame, filepath: str, label: str):
+    """Saves a DataFrame to CSV if it's not empty."""
+    if not df.empty:
+        df.to_csv(filepath, index=False)
+        tqdm.write(f"✅ Saved: {filepath}")
+    else:
+        tqdm.write(f"⚠️ Empty {label} data: {filepath}")
 
-# Loop through years and races
-for year in tqdm(years, desc="F1 Season"):
-    schedule = fastf1.get_event_schedule(year)
-    schedule = schedule[schedule['EventFormat'] == 'conventional']
+def create_output_dir(year: int, race_name: str) -> str:
+    """Creates and returns the path to the output directory for a specific event."""
+    path = os.path.join(RAW_DATA_PATH, str(year), race_name)
+    os.makedirs(path, exist_ok=True)
+    return path
 
-    race_rounds = schedule['RoundNumber'].tolist()
-    race_names = schedule['EventName'].tolist()
 
-    for i, race in enumerate(tqdm(race_rounds, desc=f"{year} Races", leave=False)):
-        race_name = sanitize_filename(race_names[i])
+# ------------------------------ #
+#       MAIN PROCESS LOGIC      #
+# ------------------------------ #
+def save_driver_profiles():
+    """Loads and saves static driver profiles."""
+    profiles: pd.DataFrame = get_driver_profiles()
+    profiles_file = os.path.join(RAW_DATA_PATH, 'driver_profiles.csv')
+    profiles.to_csv(profiles_file, index=False)
+    tqdm.write(f"✅ Saved: {profiles_file}")
 
-        for event in tqdm(events, desc=f"{year} {race_name} Events", leave=False):
-            try:
-                # Get dataframes
-                weather_and_track_data: pd.DataFrame = get_weather_and_track_data(year, race, event)
-                driver_stats: pd.DataFrame = get_driver_stats(year, race, event)
+def process_event_data(year: int, race: int, race_name: str, session: str):
+    """Processes and saves data for a single event session."""
+    try:
+        weather_df = get_weather_and_track_data(year, race, session)
+        stats_df = get_driver_stats(year, race, session)
 
-                # Create output directory
-                output_dir = os.path.join(base_path, str(year), race_name)
-                os.makedirs(output_dir, exist_ok=True)
+        output_dir = create_output_dir(year, race_name)
 
-                # Save each dataframe as CSV if available
-                if not weather_and_track_data.empty:
-                    weather_file = os.path.join(output_dir, f'{event}_weather_and_track.csv')
-                    weather_and_track_data.to_csv(weather_file, index=False)
-                    tqdm.write(f"✅ Saved: {weather_file}")
+        weather_file = os.path.join(output_dir, f'{session}_weather_and_track.csv')
+        stats_file = os.path.join(output_dir, f'{session}_driver_stats.csv')
 
-                if not driver_stats.empty:
-                    stats_file = os.path.join(output_dir, f'{event}_driver_stats.csv')
-                    driver_stats.to_csv(stats_file, index=False)
-                    tqdm.write(f"✅ Saved: {stats_file}")
+        save_dataframe(weather_df, weather_file, "weather and track")
+        save_dataframe(stats_df, stats_file, "driver stats")
 
-            except Exception as e:
-                tqdm.write(f"❌ Error processing {year} Round {race} {event}: {e}")
+    except Exception as e:
+        tqdm.write(f"❌ Error processing {year} Round {race} {session}: {e}")
+
+def run_data_collection():
+    """Main function to iterate over seasons and collect event data."""
+    save_driver_profiles()
+
+    for year in tqdm(YEARS, desc="F1 Season"):
+        schedule = fastf1.get_event_schedule(year)
+        schedule = schedule[schedule['EventFormat'] == 'conventional']
+
+        for i, row in tqdm(schedule.iterrows(), total=len(schedule), desc=f"{year} Races", leave=False):
+            race = row['RoundNumber']
+            race_name = sanitize_filename(row['EventName'])
+
+            for session in tqdm(SESSIONS, desc=f"{year} {race_name} Sessions", leave=False):
+                process_event_data(year, race, race_name, session)
+
+
+# ------------------------------ #
+#               RUN             #
+# ------------------------------ #
+if __name__ == "__main__":
+    run_data_collection()
