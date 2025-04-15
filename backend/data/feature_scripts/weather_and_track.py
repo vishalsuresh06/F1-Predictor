@@ -17,6 +17,7 @@ def safe_load_session(session, retries=3, delay=2):
                 time.sleep(delay)
             else:
                 raise RuntimeError(f"❌ Failed to load session after {retries} attempts.") from e
+        time.sleep(5)
 
 def get_weather_and_track_data(year, race, event):
     session = fastf1.get_session(year, race, event)
