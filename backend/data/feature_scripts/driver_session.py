@@ -1,11 +1,29 @@
 import fastf1
 import numpy as np
 import pandas as pd
+import time
 from sklearn.linear_model import LinearRegression
+
+def safe_load_session(session, retries=3, delay=2):
+    """Tries to load the session with retry logic."""
+    for attempt in range(1, retries + 1):
+        try:
+            session.load(laps=True)
+            if session.weather_data is not None and not session.weather_data.empty:
+                return  # success
+            else:
+                raise ValueError("Weather data is missing or empty.")
+        except Exception as e:
+            print(f"⚠️ Attempt {attempt} failed to load session: {e}")
+            if attempt < retries:
+                time.sleep(delay)
+            else:
+                raise RuntimeError(f"❌ Failed to load session after {retries} attempts.") from e
 
 def get_driver_stats(year, race, event):
     session = fastf1.get_session(year, race, event)
-    session.load(laps=True)
+    safe_load_session(session)
+
     laps = session.laps
     drivers = session.drivers
     results = session.results if hasattr(session, "results") else None
