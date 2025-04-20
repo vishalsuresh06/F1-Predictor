@@ -16,7 +16,7 @@ def get_driver_profiles(START_YEAR, END_YEAR):
             event_name = race['EventName']
             try:
                 race_session = fastf1.get_session(year, event_name, 'R')
-                race_session.load(laps=False, telemetry=False, weather=False, messages=False)
+                race_session.load()
 
                 results = race_session.results[['Abbreviation', 'Position']]
 
