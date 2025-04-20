@@ -2,9 +2,9 @@
 
 # dependencies
 /node_modules]
-/backend/data/cache
-/backend/data/raw_data
 /venv
+/backend/data/cache
+/backend/data/data_test.py
 /.pnp
 .pnp.*
 .yarn/*

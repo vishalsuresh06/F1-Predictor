@@ -22,8 +22,6 @@ def get_weather_data(START_YEAR, END_YEAR, SESSIONS):
     for year in tqdm(range(START_YEAR, END_YEAR + 1), desc='Processing years'):
         schedule = fastf1.get_event_schedule(year, include_testing=False)
         schedule = schedule[schedule['EventFormat'] == 'conventional']
-        finish_pos = None
-        qual_pos = None
 
         for race_number, (_, race) in enumerate(tqdm(schedule.iterrows(), total=schedule.shape[0], desc=f'{year} races', leave=False), start=1):
             event_name = race['EventName']
@@ -33,7 +31,7 @@ def get_weather_data(START_YEAR, END_YEAR, SESSIONS):
                 try:
                     session_obj = fastf1.get_session(year, event_name, session)
 
-                    session_obj.load(weather=True, laps=False, telemetry=False, messages=False)
+                    session_obj.load()
 
                     weather_data = session_obj.weather_data
                     if weather_data is None or weather_data.empty:
