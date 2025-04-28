@@ -4,7 +4,7 @@ from tqdm import tqdm
 import pandas as pd
 
 def get_driver_profiles(START_YEAR, END_YEAR):
-    fastf1.Cache.enable_cache('backend/data/cache/driver_profile_cache')
+    fastf1.Cache.enable_cache('backend/data/cache')
     appearances = {}
     avg_position_data = {}
 
@@ -16,7 +16,7 @@ def get_driver_profiles(START_YEAR, END_YEAR):
             event_name = race['EventName']
             try:
                 race_session = fastf1.get_session(year, event_name, 'R')
-                race_session.load()
+                race_session.load(laps=True, weather=True, telemetry=True, messages=False)
 
                 results = race_session.results[['Abbreviation', 'Position']]
 

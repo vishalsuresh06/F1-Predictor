@@ -6,7 +6,7 @@ from tqdm import tqdm
 import time
 
 def get_weather_data(START_YEAR, END_YEAR, SESSIONS):
-    fastf1.Cache.enable_cache('backend/data/cache/weather_data_cache')
+    fastf1.Cache.enable_cache('backend/data/cache')
 
     weather_cols = [
         'avg_track_temp', 'avg_air_temp', 'avg_humidity',
@@ -31,7 +31,7 @@ def get_weather_data(START_YEAR, END_YEAR, SESSIONS):
                 try:
                     session_obj = fastf1.get_session(year, event_name, session)
 
-                    session_obj.load()
+                    session_obj.load(laps=True, telemetry=True, weather=True)
 
                     weather_data = session_obj.weather_data
                     if weather_data is None or weather_data.empty:

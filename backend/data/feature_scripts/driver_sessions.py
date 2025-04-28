@@ -15,7 +15,7 @@ def safe_total_seconds(val):
 
 
 def driver_session_data(START_YEAR, END_YEAR, SESSIONS):
-    fastf1.Cache.enable_cache('backend/data/cache/driver_session_cache')
+    fastf1.Cache.enable_cache('backend/data/cache')
 
     # Column definitions
     fp_cols = ['year', 'race_number', 'driver', 'avg_lap_time', 'best_lap_time', 'lap_time_std',
@@ -113,7 +113,7 @@ def driver_session_data(START_YEAR, END_YEAR, SESSIONS):
 
                 except Exception as e:
                     print(f"Failed to load {event_name} {session} ({year}): {e}")
-                    continue
+                    raise
 
     # Create DataFrames once
     fp1_df = pd.DataFrame(fp1_rows, columns=fp_cols)
