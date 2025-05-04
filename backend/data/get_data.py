@@ -14,10 +14,10 @@ def main():
     PROFILE_END_YEAR = 2024
     SESSIONS = ['FP1', 'FP2', 'FP3', 'Q', 'R']
 
-    get_driver_profiles(PROFILE_START_YEAR, PROFILE_END_YEAR)
+    # get_driver_profiles(PROFILE_START_YEAR, PROFILE_END_YEAR)
     get_weather_data(PROFILE_START_YEAR, PROFILE_END_YEAR, SESSIONS)
-    driver_session_data(PROFILE_START_YEAR, PROFILE_END_YEAR, ['FP1', 'FP2', 'FP3', 'Q'])
-    get_car_data(PROFILE_START_YEAR, PROFILE_END_YEAR, SESSIONS)
+    # driver_session_data(PROFILE_START_YEAR, PROFILE_END_YEAR, ['FP1', 'FP2', 'FP3', 'Q', 'R'])
+    # get_car_data(PROFILE_START_YEAR, PROFILE_END_YEAR, SESSIONS)
 
 if __name__ == '__main__':
     main()

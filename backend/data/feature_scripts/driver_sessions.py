@@ -113,7 +113,7 @@ def driver_session_data(START_YEAR, END_YEAR, SESSIONS):
 
                 except Exception as e:
                     print(f"Failed to load {event_name} {session} ({year}): {e}")
-                    raise
+                    continue
 
     # Create DataFrames once
     fp1_df = pd.DataFrame(fp1_rows, columns=fp_cols)
