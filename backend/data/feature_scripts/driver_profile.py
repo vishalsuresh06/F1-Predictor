@@ -5,58 +5,65 @@ import pandas as pd
 
 def get_driver_profiles(START_YEAR, END_YEAR):
     fastf1.Cache.enable_cache('backend/data/cache')
-    appearances = {}
-    avg_position_data = {}
+    
+    records = []
 
     for year in tqdm(range(START_YEAR, END_YEAR + 1), desc='Processing years'):
         schedule = fastf1.get_event_schedule(year, include_testing=False)
         schedule = schedule[schedule['EventFormat'] == 'conventional']
 
-        for _, race in tqdm(schedule.iterrows(), total=schedule.shape[0], desc=f'{year} races', leave=False):
+        for race_number, (_, race) in enumerate(tqdm(schedule.iterrows(), total=schedule.shape[0], desc=f'{year} races', leave=False), start=1):
             event_name = race['EventName']
+            event_key = event_name.lower().replace(" grand prix", "").replace(" ", "_").replace("-", "_")
+
             try:
                 race_session = fastf1.get_session(year, event_name, 'R')
-                race_session.load(laps=True, weather=True, telemetry=True, messages=False)
+                race_session.load()
 
-                results = race_session.results[['Abbreviation', 'Position']]
+                if race_session.results is None or race_session.results.empty:
+                    continue
 
-                for _, row in results.iterrows():
+                for _, row in race_session.results.iterrows():
                     driver = row['Abbreviation']
-                    position = row['Position']
-
-                    if driver not in appearances:
-                        appearances[driver] = {}
-                    if event_name not in appearances[driver]:
-                        appearances[driver][event_name] = 1
-                    else:
-                        appearances[driver][event_name] += 1
-
-                    if year == END_YEAR:
-                        if driver not in avg_position_data:
-                            avg_position_data[driver] = {'total_pos': 0, 'count': 0}
-                        avg_position_data[driver]['total_pos'] += position
-                        avg_position_data[driver]['count'] += 1
+                    records.append({
+                        'year': year,
+                        'race_number': race_number,
+                        'driver': driver,
+                        'event_key': event_key,
+                        'participated': 1
+                    })
 
             except Exception as e:
                 print(f"Skipping {event_name} {year} due to error: {e}")
 
-    df = pd.DataFrame.from_dict(appearances, orient='index')
-    df.fillna(0, inplace=True)
-    df = df.astype(int)
+    df = pd.DataFrame(records)
 
-    df['total_appearances'] = df.sum(axis=1)
+    # Get all unique rows
+    all_keys = df[['year', 'race_number', 'driver']].drop_duplicates()
 
-    df['avg_finish'] = df.index.map(
-        lambda driver: round(avg_position_data[driver]['total_pos'] / avg_position_data[driver]['count'], 2)
-        if driver in avg_position_data else 20
-    )
+    # One-hot encode event participation
+    participation_df = pd.get_dummies(df[['year', 'race_number', 'driver', 'event_key']], columns=['event_key'])
+    participation_df['value'] = 1
 
-    cols = ['total_appearances', 'avg_finish'] + [col for col in df.columns if col not in ['total_appearances', 'avg_finish']]
-    df = df[cols]
-    df = df.sort_values(by='total_appearances', ascending=False)
+    # Group by and sum to get a wide format
+    wide_df = participation_df.pivot_table(
+        index=['year', 'race_number', 'driver'],
+        aggfunc='sum',
+        fill_value=0
+    ).reset_index()
 
+    # Merge with full keys to ensure all driver-race combinations are preserved
+    final_df = pd.merge(all_keys, wide_df, on=['year', 'race_number', 'driver'], how='left').fillna(0)
+
+    # Convert any float 1.0 to int 1
+    for col in final_df.columns:
+        if final_df[col].dtype == float:
+            final_df[col] = final_df[col].astype(int)
+
+    # Save
     output_dir = Path('backend/data/raw_data/driver_profiles')
     output_dir.mkdir(parents=True, exist_ok=True)
-
     output_file = output_dir / 'driver_profiles.csv'
-    df.to_csv(output_file)
+    final_df.to_csv(output_file, index=False)
+
+    print(f"✅ Fixed driver participation matrix saved to {output_file}")

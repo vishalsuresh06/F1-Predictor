@@ -42,6 +42,10 @@ combined_df = pd.merge(combined_df, weather_df, on=["year", "race_number", "driv
 # Merge with results data (on year, race_number, driver)
 combined_df = pd.merge(combined_df, results_df, on=["year", "race_number", "driver"], how="left")
 
+combined_df = combined_df.dropna()
+combined_df.drop(combined_df.columns[-3], axis=1, inplace=True)
+combined_df.drop(combined_df.columns[-3], axis=1, inplace=True)
+
 # Save to CSV
 output_path = os.path.join(BASE_DIR, "combined_sessions_only.csv")
 combined_df.to_csv(output_path, index=False)

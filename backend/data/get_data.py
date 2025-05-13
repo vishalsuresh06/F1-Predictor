@@ -11,11 +11,11 @@ def main():
     fastf1.logger.set_log_level('ERROR')
 
     PROFILE_START_YEAR = 2018
-    PROFILE_END_YEAR = 2024
+    PROFILE_END_YEAR = 2018
     SESSIONS = ['FP1', 'FP2', 'FP3', 'Q', 'R']
 
-    # get_driver_profiles(PROFILE_START_YEAR, PROFILE_END_YEAR)
-    get_weather_data(PROFILE_START_YEAR, PROFILE_END_YEAR, SESSIONS)
+    get_driver_profiles(PROFILE_START_YEAR, PROFILE_END_YEAR)
+    # get_weather_data(PROFILE_START_YEAR, PROFILE_END_YEAR, SESSIONS)
     # driver_session_data(PROFILE_START_YEAR, PROFILE_END_YEAR, ['FP1', 'FP2', 'FP3', 'Q', 'R'])
     # get_car_data(PROFILE_START_YEAR, PROFILE_END_YEAR, SESSIONS)
 
